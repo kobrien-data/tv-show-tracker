@@ -37,9 +37,14 @@ def add_show() -> None:
     """
     Adds a new TV show to the tracking dictionary.
     """
-    tv_show_name = input("Enter TV show name: ")
-    season_number = int(input("Enter season number: "))
-    episode_number = int(input("Enter episode number: "))
+    tv_show_name = input("Enter TV show name: ").capitalize()
+    while True:
+        try:
+            season_number = int(input("Enter season number: "))
+            episode_number = int(input("Enter episode number: "))
+            break
+        except ValueError:
+            print("Please enter valid integers for season and episode numbers.")
     
 
     # Add the new show (this is how you create the structure)
@@ -72,8 +77,13 @@ def edit_show() -> None:
     Edits an existing TV show in the tracking dictionary.
     """
     tv_show_name = input("Enter TV show name to edit: ")
-    season_number = int(input("Enter new season number: "))
-    episode_number = int(input("Enter new episode number: "))
+    while True:
+        try:
+            season_number = int(input("Enter season number: "))
+            episode_number = int(input("Enter episode number: "))
+            break
+        except ValueError:
+            print("Please enter valid integers for season and episode numbers.")
     
     shows = load_shows()
     
