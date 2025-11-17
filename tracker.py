@@ -40,16 +40,39 @@ def add_show() -> None:
     tv_show_name = input("Enter TV show name: ").capitalize()
     while True:
         try:
-            season_number = int(input("Enter season number: "))
-            episode_number = int(input("Enter episode number: "))
-            break
+            no_of_seasons = int(input("Enter number of seasons: "))
+            if no_of_seasons <= 0:
+                print("Number of seasons must be at least 1")
+            else: 
+                break
         except ValueError:
-            print("Please enter valid integers for season and episode numbers.")
+            print("Please enter a valid integer for number of seasons.")
+
+    while True:
+        try:
+            season_number = int(input("Enter season number: "))
+            if season_number < 1 or season_number > no_of_seasons:
+                print(f"Season number must be between 1 and {no_of_seasons}")
+            else:
+                break
+        except ValueError:
+            print("Please enter a valid integer for season number.")
+
+    while True:
+        try:
+            episode_number = int(input("Enter episode number: "))
+            if episode_number < 1:
+                print("Episode number must be at least 1")
+            else:
+                break
+        except ValueError:
+            print("Please enter a valid integer for episode number.")
     
 
     # Add the new show (this is how you create the structure)
     shows = load_shows()
     shows[tv_show_name] = {
+        "number_of_seasons": no_of_seasons,
         "current_season": season_number,
         "current_episode": episode_number
     }
@@ -57,7 +80,7 @@ def add_show() -> None:
     # Save to file
     save_shows(shows)
     
-    print(f"Added '{tv_show_name}', Season {season_number}, Episode {episode_number}")
+    print(f"Added '{tv_show_name}', Number of seasons {no_of_seasons}, Current Season {season_number}, Episode {episode_number}")
 
 def list_shows() -> None:
     """
@@ -69,8 +92,34 @@ def list_shows() -> None:
         print("No shows tracked yet.")
         return
     
+
+    print("\n" + "="*60)
+    print("YOUR TV SHOWS")
+    print("="*60)
+
+
     for show, info in shows.items():
-        print(f"{show}: Season {info['current_season']}, Episode {info['current_episode']}")
+        total_seasons = info['number_of_seasons']
+        current_season = info['current_season']
+        current_episode = info['current_episode']
+
+        seasons_completed = current_season - 1
+        progress_percent = ((current_season - 1) / total_seasons) * 100 if total_seasons > 0 else 0
+
+        bar_length = 20
+        filled_length = int(bar_length * progress_percent / 100)
+        bar = '█' * filled_length + '░' * (bar_length - filled_length)
+
+        if current_season == total_seasons:
+            status = "Final Season"
+        elif current_season == 1:
+            status = "Just Started"
+        else:
+            status = "In Progress"
+        print(f"\n{show} - {status}")
+        print(f"Season {current_season}, Episode {current_episode} / {total_seasons} Seasons Total")
+        print(f"Seasons Completed: {progress_percent:.0f}% [{bar}]")
+    print("\n" + "="*60 + "\n")
 
 def edit_show() -> None:
     """
