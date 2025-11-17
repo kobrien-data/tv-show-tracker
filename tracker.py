@@ -104,7 +104,7 @@ def list_shows() -> None:
         current_episode = info['current_episode']
 
         seasons_completed = current_season - 1
-        progress_percent = ((current_season - 1) / total_seasons) * 100 if total_seasons > 0 else 0
+        progress_percent = (seasons_completed / total_seasons) * 100 if total_seasons > 0 else 0
 
         bar_length = 20
         filled_length = int(bar_length * progress_percent / 100)
