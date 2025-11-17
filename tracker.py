@@ -19,7 +19,7 @@ def load_shows() -> dict:
 
 def save_shows(shows: dict) -> None:
     """
-    Saves the shows dictionary to a file (simulated here).
+    Saves the shows dictionary to a file
 
     Parameters:
     shows (dict): The dictionary containing TV show tracking information.
@@ -34,6 +34,9 @@ def save_shows(shows: dict) -> None:
 
 
 def add_show() -> None:
+    """
+    Adds a new TV show to the tracking dictionary.
+    """
     tv_show_name = input("Enter TV show name: ")
     season_number = int(input("Enter season number: "))
     episode_number = int(input("Enter episode number: "))
@@ -51,7 +54,23 @@ def add_show() -> None:
     
     print(f"Added '{tv_show_name}', Season {season_number}, Episode {episode_number}")
 
+def list_shows() -> None:
+    """
+    Lists all TV shows in the tracking dictionary.
+    """
+    shows = load_shows()
+    
+    if not shows:
+        print("No shows tracked yet.")
+        return
+    
+    for show, info in shows.items():
+        print(f"{show}: Season {info['current_season']}, Episode {info['current_episode']}")
+
 def edit_show() -> None:
+    """
+    Edits an existing TV show in the tracking dictionary.
+    """
     tv_show_name = input("Enter TV show name to edit: ")
     season_number = int(input("Enter new season number: "))
     episode_number = int(input("Enter new episode number: "))
@@ -69,10 +88,11 @@ def edit_show() -> None:
     else:
         print(f"Show '{tv_show_name}' not found.")
 
-#add_show()
-#edit_show()
 
 def delete_show() -> None:
+    """
+    Deletes a TV show from the tracking dictionary.
+    """
     tv_show_name = input("Enter TV show name to delete: ")
     
     shows = load_shows()
@@ -87,4 +107,33 @@ def delete_show() -> None:
     else:
         print(f"Show '{tv_show_name}' not found.")
 
-delete_show()
+def menu() -> None:
+    """
+    Displays the menu and handles user input.
+    """
+    while True:
+        print("\nTV Show Tracker Menu:")
+        print("1. Add Show")
+        print("2. List Shows")
+        print("3. Edit Show")
+        print("4. Delete Show")
+        print("5. Exit")
+        
+        choice = input("Enter your choice: ")
+        
+        if choice == '1':
+            add_show()
+        elif choice == '2':
+            list_shows()
+        elif choice == '3':
+            edit_show()
+        elif choice == '4':
+            delete_show()
+        elif choice == '5':
+            print("Exiting TV Show Tracker.")
+            break
+        else:
+            print("Invalid choice. Please try again.")
+
+if __name__ == "__main__":
+    menu()
