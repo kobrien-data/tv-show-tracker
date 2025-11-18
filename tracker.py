@@ -1,40 +1,90 @@
-from config import TMDB_API_KEY
+from config import TMDB_API_KEY, MONGODB_URI
 import requests
+import pymongo
 from urllib.parse import quote
 
-def load_shows() -> dict:
-    """
-    Loads the shows dictionary from a file
-
-    Returns:
-    dict: The dictionary containing TV show tracking information
-    """
-    import json
-    import os
-    
-    # Check if file exists
-    if not os.path.exists('shows.json'):
-        return {}  # Return empty dict if no file yet
-    
-    # Load and return the existing data
-    with open('shows.json', 'r') as f:
-        return json.load(f)
+from pymongo.mongo_client import MongoClient
+uri = MONGODB_URI
+# Create a new client and connect to the server
+client = MongoClient(uri)
+db = client['tv_show_tracker']  # Database name
+shows_collection = db['shows']
 
 
-def save_shows(shows: dict) -> None:
+def get_show(show_name: str) -> dict | None:
     """
-    Saves the shows dictionary to a file
+    Retrieves a show's data from the MongoDB collection.
 
     Parameters:
-    shows (dict): The dictionary containing TV show tracking information.
+    show_name (str): The name of the TV show.
+
+    Returns:
+    dict | None: The data associated with the TV show, or None if not found.
+    """
+    show_doc = shows_collection.find_one({'name': show_name})
+    if show_doc:
+        return {k: v for k, v in show_doc.items() if k not in ['_id', 'name']}
+    return None
+
+def delete_show() -> None:
+    """
+    Deletes a show from the MongoDB collection.
+
+    Parameters:
+    show_name (str): The name of the TV show.
 
     Returns:
     None
     """
-    # Simulate saving to a file
-    with open('shows.json', 'w') as f:
-        import json
-        json.dump(shows, f, indent=4)
+    show_name = input("Enter the name of the show to update: ")
+    shows_collection.delete_one({'name': show_name})
+
+def update_episode() -> None:
+    """
+    Updates the current season and episode of a TV show in the MongoDB collection.
+
+    Returns:
+    None
+    """
+    if shows_collection.count_documents({}) == 0:
+        print("No shows tracked yet.")
+        return
+    
+    print("Tracked Shows:")
+    all_shows = list(shows_collection.find())
+    for i, show in enumerate(all_shows, 1):
+        print(f"{i}. {show['name']} (S{show['current_season']}E{show['current_episode']})")
+
+    try:
+        choice = int(input("Select a show to update by number: "))
+        if choice < 1 or choice > len(all_shows):
+            print("Invalid choice.")
+            return
+        
+        selected_show = all_shows[choice - 1]
+        show_name = selected_show['name']
+    except ValueError:
+        print("Please enter a valid number.")
+        return
+    
+    try:
+        season_number = int(input("Enter the new season number: "))
+        episode_number = int(input("Enter the new episode number: "))
+    except ValueError:
+        print("Please enter valid integers for season and episode numbers.")
+        return
+    
+    result = shows_collection.update_one(
+        {'name': show_name},
+        {'$set': {
+            'current_season': season_number,
+            'current_episode': episode_number
+        }}
+    )
+    if result.modified_count > 0:
+        print(f"Updated '{show_name}' to Season {season_number}, Episode {episode_number}.")
+    else:
+        print(f"No changes made to '{show_name}'.")
 
 
 def add_show() -> None:
@@ -100,17 +150,18 @@ def add_show() -> None:
             print("Please enter a valid integer for episode number.")
     
 
-    # Add the new show (this is how you create the structure)
-    shows = load_shows()
-    shows[tv_show_name] = {
-        "poster_path": poster_path,
+    show_data = {
         "number_of_seasons": no_of_seasons,
         "current_season": season_number,
-        "current_episode": episode_number
+        "current_episode": episode_number,
+        poster_path: poster_path
     }
-    
-    # Save to file
-    save_shows(shows)
+
+    shows_collection.update_one(
+        {'name': tv_show_name},
+        {'$set': {'name': tv_show_name, **show_data}},
+        upsert=True
+    )
     
     print(f"Added '{tv_show_name}', Number of seasons {no_of_seasons}, Current Season {season_number}, Episode {episode_number}")
 
@@ -118,9 +169,9 @@ def list_shows() -> None:
     """
     Lists all TV shows in the tracking dictionary.
     """
-    shows = load_shows()
+    all_shows = shows_collection.find()
     
-    if not shows:
+    if shows_collection.count_documents({}) == 0:
         print("No shows tracked yet.")
         return
     
@@ -130,10 +181,11 @@ def list_shows() -> None:
     print("="*60)
 
 
-    for show, info in shows.items():
-        total_seasons = info['number_of_seasons']
-        current_season = info['current_season']
-        current_episode = info['current_episode']
+    for show_doc in all_shows:
+        show_name = show_doc['name']
+        total_seasons = show_doc['number_of_seasons']
+        current_season = show_doc['current_season']
+        current_episode = show_doc['current_episode']
 
         seasons_completed = current_season - 1
         progress_percent = (seasons_completed / total_seasons) * 100 if total_seasons > 0 else 0
@@ -148,55 +200,10 @@ def list_shows() -> None:
             status = "Just Started"
         else:
             status = "In Progress"
-        print(f"\n{show} - {status}")
+        print(f"\n{show_name} - {status}")
         print(f"Season {current_season}, Episode {current_episode} / {total_seasons} Seasons Total")
         print(f"Seasons Completed: {progress_percent:.0f}% [{bar}]")
     print("\n" + "="*60 + "\n")
-
-def edit_show() -> None:
-    """
-    Edits an existing TV show in the tracking dictionary.
-    """
-    tv_show_name = input("Enter TV show name to edit: ")
-    while True:
-        try:
-            season_number = int(input("Enter season number: "))
-            episode_number = int(input("Enter episode number: "))
-            break
-        except ValueError:
-            print("Please enter valid integers for season and episode numbers.")
-    
-    shows = load_shows()
-    
-    if tv_show_name in shows:
-        shows[tv_show_name]["current_season"] = season_number
-        shows[tv_show_name]["current_episode"] = episode_number
-        
-        # Save to file
-        save_shows(shows)
-        
-        print(f"Updated '{tv_show_name}' to Season {season_number}, Episode {episode_number}")
-    else:
-        print(f"Show '{tv_show_name}' not found.")
-
-
-def delete_show() -> None:
-    """
-    Deletes a TV show from the tracking dictionary.
-    """
-    tv_show_name = input("Enter TV show name to delete: ")
-    
-    shows = load_shows()
-    
-    if tv_show_name in shows:
-        del shows[tv_show_name]
-        
-        # Save to file
-        save_shows(shows)
-        
-        print(f"Deleted show '{tv_show_name}'")
-    else:
-        print(f"Show '{tv_show_name}' not found.")
 
 def menu() -> None:
     """
@@ -217,7 +224,7 @@ def menu() -> None:
         elif choice == '2':
             list_shows()
         elif choice == '3':
-            edit_show()
+            update_episode()
         elif choice == '4':
             delete_show()
         elif choice == '5':
