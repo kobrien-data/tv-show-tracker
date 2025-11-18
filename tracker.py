@@ -1,3 +1,7 @@
+from config import TMDB_API_KEY
+import requests
+from urllib.parse import quote
+
 def load_shows() -> dict:
     """
     Loads the shows dictionary from a file
@@ -38,19 +42,46 @@ def add_show() -> None:
     Adds a new TV show to the tracking dictionary.
     """
     tv_show_name = input("Enter TV show name: ").capitalize()
-    while True:
-        try:
-            no_of_seasons = int(input("Enter number of seasons: "))
-            if no_of_seasons <= 0:
-                print("Number of seasons must be at least 1")
-            else: 
-                break
-        except ValueError:
-            print("Please enter a valid integer for number of seasons.")
+    encoded_name = quote(tv_show_name)
+    url = f"https://api.themoviedb.org/3/search/tv?query={encoded_name}&api_key={TMDB_API_KEY}"
+    response = requests.get(url)
+    data = response.json()
+
+    if not data['results']:
+        print(f"No results found for '{tv_show_name}'. Please check the name and try again.")
+    else:
+        print(f"\nFound {len(data['results'])} result(s):\n")
+        for i, show in enumerate(data['results'], 1):
+        # Handle missing first_air_date
+            year = show.get('first_air_date', 'Unknown')[:4] if show.get('first_air_date') else 'Unknown'
+            print(f"{i}. {show['original_name']} ({year})")
 
     while True:
         try:
-            season_number = int(input("Enter season number: "))
+            choice = int(input("\nEnter the number of the correct show: "))
+            if 1 <= choice <= len(data['results']):
+                selected_show = data['results'][choice - 1]
+                break
+            else:
+                print(f"Please enter a number between 1 and {len(data['results'])}")
+        except ValueError:
+            print("Please enter a valid number")
+    
+    # Now you have the selected show!
+    show_id = selected_show['id']
+    show_name = selected_show['original_name']
+    
+    print(f"\nYou selected: {show_name}")
+
+    detail_url = f"https://api.themoviedb.org/3/tv/{show_id}?api_key={TMDB_API_KEY}"
+    detail_response = requests.get(detail_url)
+    detail_data = detail_response.json()
+    no_of_seasons = detail_data['number_of_seasons']
+    poster_path = detail_data.get('poster_path', None)
+
+    while True:
+        try:
+            season_number = int(input("Enter the season you're currently watching: "))
             if season_number < 1 or season_number > no_of_seasons:
                 print(f"Season number must be between 1 and {no_of_seasons}")
             else:
@@ -60,7 +91,7 @@ def add_show() -> None:
 
     while True:
         try:
-            episode_number = int(input("Enter episode number: "))
+            episode_number = int(input("Enter the number of the last episode you watched: "))
             if episode_number < 1:
                 print("Episode number must be at least 1")
             else:
@@ -72,6 +103,7 @@ def add_show() -> None:
     # Add the new show (this is how you create the structure)
     shows = load_shows()
     shows[tv_show_name] = {
+        "poster_path": poster_path,
         "number_of_seasons": no_of_seasons,
         "current_season": season_number,
         "current_episode": episode_number
