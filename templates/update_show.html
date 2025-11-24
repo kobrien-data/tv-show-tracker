@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}Update {{ show.name }} - TV Tracker{% endblock %}
+
+{% block content %}
+<div style="max-width: 600px; margin: 0 auto;">
+    <h2 style="font-size: 1.8rem; margin-bottom: 10px;">Update Progress</h2>
+    <p style="color: var(--text-secondary); margin-bottom: 30px;">{{ show.name }}</p>
+
+    <div style="display: flex; gap: 20px; margin-bottom: 30px; align-items: start;">
+        {% if show.poster_url %}
+            <img src="{{ show.poster_url }}" alt="{{ show.name }}" 
+                 style="width: 120px; border-radius: 8px;">
+        {% endif %}
+        
+        <div>
+            <div style="margin-bottom: 10px;">
+                <strong>Current Progress:</strong> Season {{ show.current_season }}, Episode {{ show.current_episode }}
+            </div>
+            <div style="color: var(--text-secondary);">
+                Total Seasons: {{ show.number_of_seasons }}
+            </div>
+            {% if show.overview %}
+                <div style="margin-top: 15px; color: var(--text-secondary); font-size: 0.9rem; line-height: 1.5;">
+                    {{ show.overview[:200] }}{% if show.overview|length > 200 %}...{% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <form method="POST">
+        <div class="form-group">
+            <label for="season">Season Number</label>
+            <input type="number" id="season" name="season" 
+                   value="{{ show.current_season }}" 
+                   min="1" max="{{ show.number_of_seasons }}" required>
+        </div>
+
+        <div class="form-group">
+            <label for="episode">Episode Number</label>
+            <input type="number" id="episode" name="episode" 
+                   value="{{ show.current_episode }}" 
+                   min="1" required>
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+            <button type="submit" class="btn">Update Progress</button>
+            <a href="{{ url_for('index') }}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

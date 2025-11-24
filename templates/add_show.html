@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}Add Show - TV Tracker{% endblock %}
+
+{% block content %}
+<h2 style="font-size: 1.8rem; margin-bottom: 30px;">Add a New Show</h2>
+
+<form method="POST" style="max-width: 600px;">
+    <div class="form-group">
+        <label for="query">Search for a TV Show</label>
+        <input type="text" id="query" name="query" placeholder="e.g., Breaking Bad" 
+               value="{{ search_query if search_query else '' }}" required>
+    </div>
+    <button type="submit" name="search" class="btn">Search</button>
+    <a href="{{ url_for('index') }}" class="btn btn-secondary" style="margin-left: 10px;">Cancel</a>
+</form>
+
+{% if results is defined %}
+    {% if results %}
+        <div class="search-results">
+            <h3 style="margin-bottom: 20px; color: var(--text-primary);">
+                Found {{ results|length }} result{% if results|length != 1 %}s{% endif %}
+            </h3>
+            
+            {% for show in results %}
+            <div class="result-item">
+                {% if show.poster_path %}
+                    <img src="https://image.tmdb.org/t/p/w92{{ show.poster_path }}" 
+                         alt="{{ show.original_name }}" class="result-poster">
+                {% else %}
+                    <div class="result-poster" style="display: flex; align-items: center; justify-content: center; font-size: 2rem;">
+                        📺
+                    </div>
+                {% endif %}
+                
+                <div class="result-info">
+                    <div class="result-title">{{ show.original_name }}</div>
+                    <div class="result-year">
+                        {% if show.first_air_date %}
+                            {{ show.first_air_date[:4] }}
+                        {% else %}
+                            Year unknown
+                        {% endif %}
+                    </div>
+                    <div class="result-overview">
+                        {{ show.overview[:150] }}{% if show.overview|length > 150 %}...{% endif %}
+                    </div>
+                </div>
+                
+                <form method="POST">
+                    <input type="hidden" name="show_id" value="{{ show.id }}">
+                    <input type="hidden" name="show_name" value="{{ show.original_name }}">
+                    <button type="submit" name="add_show" class="btn">Add Show</button>
+                </form>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state" style="padding: 40px 20px;">
+            <h3>No results found for "{{ search_query }}"</h3>
+            <p style="color: var(--text-secondary);">Try a different search term</p>
+        </div>
+    {% endif %}
+{% endif %}
+{% endblock %}
