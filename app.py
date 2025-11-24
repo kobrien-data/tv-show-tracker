@@ -9,12 +9,6 @@ app = Flask(__name__)
 # MongoDB setup
 client = MongoClient(MONGODB_URI, tls=True,
     tlsAllowInvalidCertificates=True)
-
-try:
-    client.admin.command('ping')
-    print("Pinged your deployment. You successfully connected to MongoDB!")
-except Exception as e:
-    print(e)
 db = client['tv_tracker']
 shows_collection = db['shows']
 
@@ -30,8 +24,12 @@ def add_show():
     if request.method == 'GET':
         return render_template('add_show.html')
     
-    # Handle search
+    print("=== DEBUG ===")
+    print("Form data:", dict(request.form))
+    
+    # Handle search - FIRST IF
     if 'search' in request.form:
+        print("Handling search...")
         search_query = request.form.get('query')
         encoded_query = quote(search_query)
         url = f"https://api.themoviedb.org/3/search/tv?query={encoded_query}&api_key={TMDB_API_KEY}"
@@ -41,28 +39,54 @@ def add_show():
         
         return render_template('add_show.html', results=data.get('results', []), search_query=search_query)
     
-    # Handle adding selected show
-    if 'add_show' in request.form:
+    # Handle selecting a show - ELIF (not if!)
+    elif 'select_show' in request.form:
+        print("Handling select_show...")
         show_id = request.form.get('show_id')
         show_name = request.form.get('show_name')
+        
+        print(f"Selected: {show_name} (ID: {show_id})")
         
         # Get detailed info
         detail_url = f"https://api.themoviedb.org/3/tv/{show_id}?api_key={TMDB_API_KEY}"
         detail_response = requests.get(detail_url)
         detail_data = detail_response.json()
         
-        # Prepare show data
+        # Prepare show info to pass to template
         poster_path = detail_data.get('poster_path')
         poster_url = f"https://image.tmdb.org/t/p/w342{poster_path}" if poster_path else None
         
+        show_info = {
+            'id': show_id,
+            'name': show_name,
+            'number_of_seasons': detail_data.get('number_of_seasons', 0),
+            'poster_url': poster_url,
+            'overview': detail_data.get('overview', '')
+        }
+        
+        print("Returning template with selected_show...")
+        return render_template('add_show.html', selected_show=show_info)
+    
+    # Handle final add with season/episode - ELIF (not if!)
+    elif 'confirm_add' in request.form:
+        print("Handling confirm_add...")
+        show_id = request.form.get('show_id')
+        show_name = request.form.get('show_name')
+        poster_url = request.form.get('poster_url')
+        overview = request.form.get('overview')
+        number_of_seasons = int(request.form.get('number_of_seasons'))
+        current_season = int(request.form.get('current_season'))
+        current_episode = int(request.form.get('current_episode'))
+        
+        # Prepare show data
         show_data = {
             'name': show_name,
             'tmdb_id': show_id,
-            'number_of_seasons': detail_data.get('number_of_seasons', 0),
-            'current_season': 1,
-            'current_episode': 1,
-            'poster_url': poster_url,
-            'overview': detail_data.get('overview', '')
+            'number_of_seasons': number_of_seasons,
+            'current_season': current_season,
+            'current_episode': current_episode,
+            'poster_url': poster_url if poster_url else None,
+            'overview': overview
         }
         
         # Save to MongoDB
@@ -74,6 +98,7 @@ def add_show():
         
         return redirect(url_for('index'))
     
+    # If nothing matched
     return redirect(url_for('add_show'))
 
 @app.route('/update/<show_name>', methods=['GET', 'POST'])
@@ -107,4 +132,4 @@ def delete_show(show_name):
     return redirect(url_for('index'))
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5003)
+    app.run(debug=True, port=5000)
