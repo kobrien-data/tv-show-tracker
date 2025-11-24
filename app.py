@@ -1,10 +1,13 @@
 from flask import Flask, render_template, request, redirect, url_for, jsonify
-from config import MONGODB_URI, TMDB_API_KEY
+import os
 from pymongo import MongoClient
 import requests
 from urllib.parse import quote
 
 app = Flask(__name__)
+
+MONGODB_URI = os.environ.get('MONGODB_URI')
+TMDB_API_KEY = os.environ.get('TMDB_API_KEY')
 
 # MongoDB setup
 client = MongoClient(MONGODB_URI, tls=True,
