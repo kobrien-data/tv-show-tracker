@@ -19,3 +19,5 @@ In this phase, I connected the app to MongoDB Atlas. While my original JSON file
 ### Phase 4
 Finally, I changed the app to use Flask so I could run it in my web browser and create a UI instead of having it just run in the terminal. 
 
+## Deployment
+The app is deployed at: https://tv-show-tracker-6yet.onrender.com/
