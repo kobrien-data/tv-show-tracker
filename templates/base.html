@@ -8,14 +8,26 @@
 </head>
 <body>
     <header>
-        <div class="header-content">
-            <h1>📺 TV Tracker</h1>
-            <nav>
+    <div class="header-content">
+        <h1>📺 TV Tracker</h1>
+        <nav>
+            {% if current_user.is_authenticated %}
+                <span style="color: var(--text-secondary); margin-right: 20px;">
+                    {% if current_user.picture %}
+                        <img src="{{ current_user.picture }}" alt="{{ current_user.name }}" 
+                             style="width: 32px; height: 32px; border-radius: 50%; vertical-align: middle; margin-right: 8px;">
+                    {% endif %}
+                    {{ current_user.name }}
+                </span>
                 <a href="{{ url_for('index') }}">My Shows</a>
                 <a href="{{ url_for('add_show') }}" class="btn">+ Add Show</a>
-            </nav>
-        </div>
-    </header>
+                <a href="{{ url_for('logout') }}" style="margin-left: 20px;">Logout</a>
+            {% else %}
+                <a href="{{ url_for('login') }}" class="btn">Sign in with Google</a>
+            {% endif %}
+        </nav>
+    </div>
+</header>
 
     <div class="container">
         {% block content %}{% endblock %}

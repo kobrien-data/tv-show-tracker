@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - TV Tracker</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; flex-direction: column;">
+        <h1 style="font-size: 3rem; margin-bottom: 20px;">📺 TV Tracker</h1>
+        <p style="color: var(--text-secondary); margin-bottom: 40px; font-size: 1.2rem;">
+            Track your favorite TV shows
+        </p>
+        <a href="{{ url_for('login') }}" class="btn" style="font-size: 1.1rem; padding: 15px 30px;">
+            <img src="https://www.google.com/favicon.ico" alt="Google" style="width: 20px; vertical-align: middle; margin-right: 10px;">
+            Sign in with Google
+        </a>
+    </div>
+</body>
+</html>
