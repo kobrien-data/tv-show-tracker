@@ -5,6 +5,13 @@
 {% block content %}
 <h2 style="font-size: 1.8rem; margin-bottom: 30px;">Add a New Show</h2>
 
+<div style="background: var(--bg-secondary); border-left: 3px solid var(--accent); padding: 15px; border-radius: 8px; margin-bottom: 25px; max-width: 800px;">
+    <strong style="color: var(--accent);">📝 Note for Anime Fans:</strong>
+    <p style="margin-top: 8px; color: var(--text-secondary); line-height: 1.5;">
+        TMDB sometimes doesn't track anime seasons properly. If you search for an anime and can only set it to "Season 1" even though it has multiple seasons, that means TMDB has stored the entire series as one continuous season. This is common with long-running anime like One Piece, Naruto, or Bleach. If you need Season 2 or later, try searching for "[Show Name] Season 2" separately - it may be listed as a different show.
+    </p>
+</div>
+
 <!-- Search Form -->
 {% if not selected_show %}
 <form method="POST" style="max-width: 600px;">
