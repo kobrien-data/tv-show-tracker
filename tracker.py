@@ -167,44 +167,70 @@ def add_show() -> None:
 
 def list_shows() -> None:
     """
-    Lists all TV shows in the tracking dictionary.
+    Lists all TV shows in the tracking dictionary with episode-based progress.
     """
     all_shows = shows_collection.find()
-    
     if shows_collection.count_documents({}) == 0:
         print("No shows tracked yet.")
         return
     
-
     print("\n" + "="*60)
     print("YOUR TV SHOWS")
     print("="*60)
-
-
+    
     for show_doc in all_shows:
         show_name = show_doc['name']
         total_seasons = show_doc['number_of_seasons']
         current_season = show_doc['current_season']
         current_episode = show_doc['current_episode']
-
-        seasons_completed = current_season - 1
-        progress_percent = (seasons_completed / total_seasons) * 100 if total_seasons > 0 else 0
-
+        
+        # Calculate total episodes watched and total episodes in show
+        if 'seasons_data' in show_doc:
+            # If we have detailed season data (episode counts per season)
+            seasons_data = show_doc['seasons_data']
+            
+            # Calculate episodes watched (all previous seasons + current episodes)
+            episodes_watched = 0
+            for season_num in range(1, current_season):
+                episodes_watched += seasons_data.get(str(season_num), 0)
+            episodes_watched += current_episode  # Add current episode
+            
+            # Calculate total episodes in entire show
+            total_episodes = sum(seasons_data.values())
+            
+            # Calculate progress percentage
+            progress_percent = (episodes_watched / total_episodes * 100) if total_episodes > 0 else 0
+            
+        else:
+            # Fallback: estimate based on seasons (assume equal episodes per season)
+            # This is less accurate but works if you don't have seasons_data
+            avg_episodes_per_season = 12  # You can adjust this estimate
+            episodes_watched = (current_season - 1) * avg_episodes_per_season + current_episode
+            total_episodes = total_seasons * avg_episodes_per_season
+            progress_percent = (episodes_watched / total_episodes * 100) if total_episodes > 0 else 0
+        
+        # Create progress bar
         bar_length = 20
         filled_length = int(bar_length * progress_percent / 100)
         bar = '█' * filled_length + '░' * (bar_length - filled_length)
-
+        
+        # Status indicator
         if current_season == total_seasons:
             status = "Final Season"
         elif current_season == 1:
             status = "Just Started"
         else:
             status = "In Progress"
+        
         print(f"\n{show_name} - {status}")
-        print(f"Season {current_season}, Episode {current_episode} / {total_seasons} Seasons Total")
-        print(f"Seasons Completed: {progress_percent:.0f}% [{bar}]")
+        print(f"  Season {current_season}, Episode {current_episode}")
+        
+        if 'seasons_data' in show_doc:
+            print(f"  Episodes: {episodes_watched}/{total_episodes} ({progress_percent:.0f}%) [{bar}]")
+        else:
+            print(f"  Progress: ~{progress_percent:.0f}% [{bar}] (estimated)")
+    
     print("\n" + "="*60 + "\n")
-
 def menu() -> None:
     """
     Displays the menu and handles user input.

@@ -26,13 +26,36 @@
                     Season {{ show.current_season }}, Episode {{ show.current_episode }}
                 </div>
                 
-                {% set progress = ((show.current_season - 1) / show.number_of_seasons * 100) if show.number_of_seasons > 0 else 0 %}
-                <div class="progress-bar">
-                    <div class="progress-fill" style="width: {{ progress }}%"></div>
-                </div>
-                <div style="color: var(--text-secondary); font-size: 0.85rem;">
-                    {{ "%.0f"|format(progress) }}% complete ({{ show.number_of_seasons }} seasons)
-                </div>
+                {% if show.seasons_data %}
+                    {# Calculate episodes watched #}
+                    {% set episodes_watched = namespace(value=0) %}
+                    {% for season_num in range(1, show.current_season) %}
+                        {% set episodes_watched.value = episodes_watched.value + show.seasons_data.get(season_num|string, 0) %}
+                    {% endfor %}
+                    {% set episodes_watched.value = episodes_watched.value + show.current_episode %}
+            
+                    {# Calculate total episodes #}
+                    {% set total_episodes = show.seasons_data.values()|sum %}
+            
+                    {# Calculate progress #}
+                    {% set progress = (episodes_watched.value / total_episodes * 100) if total_episodes > 0 else 0 %}
+            
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: {{ progress }}%"></div>
+                    </div>
+                    <div style="color: var(--text-secondary); font-size: 0.85rem;">
+                        {{ episodes_watched.value }}/{{ total_episodes }} episodes ({{ "%.0f"|format(progress) }}%)
+                    </div>
+                {% else %}
+                    {# Fallback: season-based progress #}
+                    {% set progress = ((show.current_season - 1) / show.number_of_seasons * 100) if show.number_of_seasons > 0 else 0 %}
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: {{ progress }}%"></div>
+                    </div>
+                    <div style="color: var(--text-secondary); font-size: 0.85rem;">
+                        Season progress: {{ "%.0f"|format(progress) }}% ({{ show.number_of_seasons }} seasons)
+                    </div>
+                {% endif %}
                 
                 <div class="show-actions">
                     <a href="{{ url_for('update_show', show_name=show.name) }}" class="btn btn-small">Update</a>

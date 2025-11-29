@@ -135,6 +135,11 @@ def logout():
 def index():
     """Homepage - display all tracked shows"""
     shows = list(shows_collection.find({'user_id': current_user.id}))
+    for show in shows:
+        print(f"\n{show['name']}:")
+        print(f"  Has seasons_data? {'seasons_data' in show}")
+        if 'seasons_data' in show:
+            print(f"  Seasons data: {show['seasons_data']}")
     return render_template('index.html', shows=shows)
 
 @app.route('/add', methods=['GET', 'POST'])
@@ -168,6 +173,18 @@ def add_show():
         detail_url = f"https://api.themoviedb.org/3/tv/{show_id}?api_key={app.config['TMDB_API_KEY']}"
         detail_response = requests.get(detail_url)
         detail_data = detail_response.json()
+
+        seasons = detail_data.get('seasons', [])
+        print(f"Raw seasons from API: {seasons}")
+        actual_seasons = [s for s in seasons if s.get('season_number', 0) > 0]  # Filter out "Season 0" (specials)
+        print(f"Filtered actual_seasons: {actual_seasons}")
+
+        seasons_data = {}
+        for season in actual_seasons:
+            seasons_data[str(season['season_number'])] = season['episode_count']
+        print(f"Final seasons_data: {seasons_data}")
+
+        print(f"Seasons data: {seasons_data}")
         
         # Prepare show info to pass to template
         poster_path = detail_data.get('poster_path')
@@ -180,7 +197,7 @@ def add_show():
             'poster_url': poster_url,
             'overview': detail_data.get('overview', '')
         }
-        
+        print(f"Show data being saved: {show_info}") 
         print("Returning template with selected_show...")
         return render_template('add_show.html', selected_show=show_info)
     
@@ -194,6 +211,17 @@ def add_show():
         number_of_seasons = int(request.form.get('number_of_seasons'))
         current_season = int(request.form.get('current_season'))
         current_episode = int(request.form.get('current_episode'))
+
+        detail_url = f"https://api.themoviedb.org/3/tv/{show_id}?api_key={app.config['TMDB_API_KEY']}"
+        detail_response = requests.get(detail_url)
+        detail_data = detail_response.json()
+        
+        seasons = detail_data.get('seasons', [])
+        actual_seasons = [s for s in seasons if s.get('season_number', 0) > 0]
+        
+        seasons_data = {}
+        for season in actual_seasons:
+            seasons_data[str(season['season_number'])] = season['episode_count']
         
         # Prepare show data
         show_data = {
@@ -201,6 +229,7 @@ def add_show():
             'name': show_name,
             'tmdb_id': show_id,
             'number_of_seasons': number_of_seasons,
+            'seasons_data': seasons_data,
             'current_season': current_season,
             'current_episode': current_episode,
             'poster_url': poster_url if poster_url else None,
